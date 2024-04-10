@@ -7,6 +7,8 @@ namespace CraftingInterpreters.Lox
 {
     class Lox
     {
+        private static bool HadError = false;
+
         static public void Main(String[] args)
         {
             if (args.Length > 1)
@@ -16,7 +18,7 @@ namespace CraftingInterpreters.Lox
             }
             else if (args.Length == 1)
             {
-                runFile(args[0]);
+                RunFile(args[0]);
             }
             else
             {
@@ -24,7 +26,7 @@ namespace CraftingInterpreters.Lox
             }
 
         }
-        private static void runFile(string path)
+        private static void RunFile(string path)
         {
             byte[] bytes = File.ReadAllBytes(Path.GetFullPath(path));
             Run(Encoding.Default.GetString(bytes));
@@ -34,7 +36,7 @@ namespace CraftingInterpreters.Lox
             while (true)
             {
                 Console.Write("> ");
-                string line = Console.ReadLine();
+                string? line = Console.ReadLine();
                 if (line == null) break;
             }
         }
@@ -42,6 +44,22 @@ namespace CraftingInterpreters.Lox
         {
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
+            foreach(Token token in tokens)
+            {
+                Console.WriteLine($"{token}");
+            }
+        }
+
+        public static void Error(int line, string message)
+        {
+            Report(line, "", message);
+        }
+
+        private static void Report(int line, string where,string message)
+        {
+
+            Console.WriteLine("[line " + line + "] Error" + where + ": " + message);
+            HadError = true;
         }
     }
 }
