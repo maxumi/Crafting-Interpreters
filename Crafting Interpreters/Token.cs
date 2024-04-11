@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Crafting_Interpreters
+namespace CraftingInterpreters.Lox
 {
-    internal class Token
+    public class Token
     {
         public TokenType Type {  get; set; }
         public string? Lexeme { get; set; }

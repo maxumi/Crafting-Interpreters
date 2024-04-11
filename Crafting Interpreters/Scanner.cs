@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace Crafting_Interpreters
+namespace CraftingInterpreters.Lox
 {
     internal class Scanner
     {
@@ -218,7 +218,7 @@ namespace Crafting_Interpreters
             while (IsAlphaNumeric(Peek())) Advance();
 
             string text = Source.Substring(start, current);
-            TokenType type = Keywords[text];
+            TokenType? type = Keywords[text];
             if (type == null)
             {
                 type = TokenType.IDENTIFIER;
