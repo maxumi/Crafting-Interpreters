@@ -43,7 +43,6 @@ namespace CraftingInterpreters.Lox
         {
             Source = source;
         }
-        // WIP
         public List<Token> ScanTokens()
         {
             while (!isAtEnd())
@@ -76,19 +75,19 @@ namespace CraftingInterpreters.Lox
                 case ';': AddToken(TokenType.SEMICOLON); break;
                 case '*': AddToken(TokenType.STAR); break;
                 case '!':
-                    AddToken(match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
+                    AddToken(Match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
                     break;
                 case '=':
-                    AddToken(match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
+                    AddToken(Match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
                     break;
                 case '<':
-                    AddToken(match('=') ? TokenType.BANG_EQUAL : TokenType.LESS);
+                    AddToken(Match('=') ? TokenType.BANG_EQUAL : TokenType.LESS);
                     break;
                 case '>':
-                    AddToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
+                    AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
                     break;
                 case '/':
-                    if (match('/'))
+                    if (Match('/'))
                     {
                         // A comment goes until the end of the line.
                         while (Peek() != '\n' && !isAtEnd()) Advance();
@@ -135,10 +134,10 @@ namespace CraftingInterpreters.Lox
         }
         private void AddToken(TokenType type, object literal)
         {
-            string text = Source.Substring(start, current);
+            string text = Source.Substring(start, current - start);
             Tokens.Add(new Token(type, text, literal, line));
         }
-        private bool match(char expected)
+        private bool Match(char expected)
         {
             if (isAtEnd()) return false;
             if (Source[current] != expected) return false;
@@ -167,9 +166,7 @@ namespace CraftingInterpreters.Lox
 
             // The closing ".
             Advance();
-
-            // Trim the surrounding quotes.
-            string value = Source.Substring(start + 1, current - 1);
+            string value = Source.Substring(start + 1, current - start - 2);
             AddToken(TokenType.STRING, value);
 
         }
@@ -192,8 +189,7 @@ namespace CraftingInterpreters.Lox
                 while (IsDigit(Peek())) Advance();
             }
 
-            AddToken(TokenType.NUMBER,
-                Double.Parse(Source.Substring(start, current)));
+            AddToken(TokenType.NUMBER, double.Parse(Source.Substring(start, current - start)));
         }
         private char PeekNext()
         {

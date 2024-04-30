@@ -41,6 +41,9 @@ namespace CraftingInterpreters.Tools
                 writer.WriteLine($"    public abstract class {baseName}");
                 writer.WriteLine("    {");
 
+                DefineVisitor(writer, baseName, types);
+
+
 
                 // The AST classes.
                 foreach (string type in types)
@@ -51,10 +54,28 @@ namespace CraftingInterpreters.Tools
                     DefineType(writer, baseName, className, fields);
                 }
 
+                // The base accept() method.
+                writer.WriteLine();
+                writer.WriteLine("  public abstract R Accept<R>(Visitor<R> visitor);");
+
                 writer.WriteLine("    }");
                 writer.WriteLine("}");
                 writer.Close();
             }
+        }
+
+        private static void DefineVisitor(StreamWriter writer, string baseName, List<string> types)
+        {
+            writer.WriteLine("  interface Visitor<R> {");
+
+            foreach (string type in types)
+            {
+                string[] typeInfo = type.Split(':');
+                string typeName = typeInfo[0].Trim();
+                writer.WriteLine($"    R Visit{typeName}{baseName}({typeName} {baseName.ToLower()});");
+            }
+
+            writer.WriteLine("  }");
         }
 
         private static void DefineType(StreamWriter writer, string baseName, string className, string fieldList)
@@ -75,6 +96,12 @@ namespace CraftingInterpreters.Tools
             }
 
             writer.WriteLine("        }");
+
+            // Visitor pattern.
+            writer.WriteLine();
+            writer.WriteLine("    public override R Accept<R>(Visitor<R> visitor) {");
+            writer.WriteLine("      return visitor.Visit" + className + baseName + "(this);");
+            writer.WriteLine("    }");
 
             // Fields.
             writer.WriteLine();
