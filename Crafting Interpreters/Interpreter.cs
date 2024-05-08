@@ -5,26 +5,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Crafting_Interpreters
 {
-    internal class Interpreter : Expr.Visitor<object>
+    internal class Interpreter : Expr.Visitor<object>, Stmt.Visitor<object>
     {
-
-        public void Interpret(Expr expression)
+        private Environment environment = new Environment();
+        public void Interpret(List<Stmt> statements)
         {
             try
             {
-                object value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                foreach(Stmt stmt in statements)
+                {
+                    Execute(stmt);
+                }
             }
             catch (RuntimeError error)
             {
                 Lox.RuntimeError(error);
             }
-
-
         }
 
         private string Stringify(object obj)
@@ -141,9 +140,46 @@ namespace Crafting_Interpreters
             return expr.Accept(this);
 
         }
+        private void Execute(Stmt stmt)
+        {
+            stmt.Accept(this);
+        }
         private bool IsEqual(object a, object b)
         {
-            throw new NotImplementedException();
+            if (a == null && b == null) return true;
+            if (a == null) return false;
+
+            return a.Equals(b);
+        }
+
+        object? Stmt.Visitor<object>.VisitExpressionStmt(Stmt.Expression stmt)
+        {
+            Evaluate(stmt._expression);
+            return null;
+        }
+
+        object? Stmt.Visitor<object>.VisitPrintStmt(Stmt.Print stmt)
+        {
+            object value = Evaluate(stmt._expression);
+            Console.WriteLine(Stringify(value));
+            return null;
+        }
+
+        object? Stmt.Visitor<object>.VisitVarStmt(Stmt.Var stmt)
+        {
+            object value = null;
+            if (stmt.initializer != null)
+            {
+                value = Evaluate(stmt.initializer);
+            }
+
+            environment.Define(stmt.name.Lexeme, value);
+            return null;
+        }
+
+        object? Expr.Visitor<object>.VisitVariableExpr(Expr.Variable expr)
+        {
+            return environment.get(expr.name);
         }
     }
 }

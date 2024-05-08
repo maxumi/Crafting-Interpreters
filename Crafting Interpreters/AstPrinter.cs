@@ -13,6 +13,12 @@ namespace Crafting_Interpreters
         {
             return expr.Accept(this);
         }
+
+        public string? VisitVariableExpr(Expr.Variable expr)
+        {
+            throw new NotImplementedException();
+        }
+
         private string Parenthesize(string name, params Expr[] exprs)
         {
             StringBuilder? builder = new StringBuilder();

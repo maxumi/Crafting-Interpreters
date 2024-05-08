@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using static CraftingInterpreters.Lox.Stmt;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Crafting_Interpreters
@@ -18,18 +19,6 @@ namespace Crafting_Interpreters
         public Parser(List<Token> tokens)
         {
             this.tokens = tokens;
-        }
-
-        public Expr Parse()
-        {
-            try
-            {
-                return Expression();
-            }
-            catch (ParseError error)
-            {
-                return null;
-            }
         }
         private bool Match(params TokenType[] types)
         {
@@ -62,6 +51,77 @@ namespace Crafting_Interpreters
         private Expr Expression()
         {
             return Equality();
+        }
+        public List<Stmt> Parse()
+        {
+            List<Stmt> statements = new List<Stmt>();
+            while (!IsAtEnd())
+            {
+                statements.Add(Statement());
+                statements.Add(Declaration());
+
+            }
+
+            return statements;
+        }
+
+        private Stmt Declaration()
+        {
+            try
+            {
+                if (Match(TokenType.VAR))
+                {
+                    return VarDeclaration();
+                }
+
+                return Statement();
+            }
+            catch (ParseError error)
+            {
+                Synchronize();
+                return null;
+            }
+
+        }
+
+        private Stmt VarDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+            Expr initializer = null;
+            if (Match(TokenType.EQUAL))
+            {
+                initializer = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+            return new Stmt.Var(name, initializer);
+        }
+
+        private Stmt Statement()
+        {
+
+            if (Match(TokenType.PRINT))
+            {
+                return PrintStatement();
+            }
+
+            return ExpressionStatement();
+
+        }
+        private Stmt PrintStatement()
+        {
+            Expr value = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after value.");
+            return new Stmt.Print(value);
+
+        }
+
+        private Stmt ExpressionStatement()
+        {
+            Expr expr = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+            return new Stmt.Expression(expr);
+
         }
 
         private Expr Equality()
@@ -136,6 +196,11 @@ namespace Crafting_Interpreters
             if (Match(TokenType.NUMBER, TokenType.STRING))
             {
                 return new Expr.Literal(Previous().Literal);
+            }
+
+            if (Match(TokenType.IDENTIFIER))
+            {
+                return new Expr.Variable(Previous());
             }
 
             if (Match(TokenType.LEFT_PAREN))

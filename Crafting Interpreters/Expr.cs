@@ -6,10 +6,11 @@ namespace CraftingInterpreters.Lox
     {
         public interface Visitor<R>
         {
-            R VisitBinaryExpr(Binary expr);
-            R VisitGroupingExpr(Grouping expr);
-            R VisitLiteralExpr(Literal expr);
-            R VisitUnaryExpr(Unary expr);
+            R? VisitBinaryExpr(Binary expr);
+            R? VisitGroupingExpr(Grouping expr);
+            R? VisitLiteralExpr(Literal expr);
+            R? VisitUnaryExpr(Unary expr);
+            R? VisitVariableExpr(Variable expr);
         }
         public class Binary : Expr
         {
@@ -72,6 +73,21 @@ namespace CraftingInterpreters.Lox
 
             public readonly Token? Operator;
             public readonly Expr? Right;
+        }
+
+        public class Variable : Expr
+        {
+            public Variable(Token _name)
+            {
+                name = _name;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitVariableExpr(this);
+            }
+
+            public readonly Token name;
         }
 
         public abstract R Accept<R>(Visitor<R> visitor);

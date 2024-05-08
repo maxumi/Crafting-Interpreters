@@ -214,13 +214,13 @@ namespace CraftingInterpreters.Lox
             while (IsAlphaNumeric(Peek())) Advance();
 
             string text = Source.Substring(start, current);
-            TokenType? type = Keywords[text];
+            TokenType type = Keywords[text];
             if (type == null)
             {
                 type = TokenType.IDENTIFIER;
             }
 
-            AddToken(TokenType.IDENTIFIER);
+            AddToken(type);
         }
 
     }

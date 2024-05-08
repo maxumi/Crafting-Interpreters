@@ -13,12 +13,13 @@ namespace CraftingInterpreters.Lox
         private static bool HadError = false;
         private static bool HadRuntimeError = false;
 
+
         static public void Main(String[] args)
         {
             if (args.Length > 1)
             {
                 Console.WriteLine("Usage: jlox [script]");
-                Environment.Exit(64);
+               System.Environment.Exit(64);
             }
             else if (args.Length == 1)
             {
@@ -36,8 +37,8 @@ namespace CraftingInterpreters.Lox
             Run(Encoding.Default.GetString(bytes));
 
             // Indicate an error in the exit code
-            if (HadError) Environment.Exit(65);
-            if (HadRuntimeError) Environment.Exit(70);
+            if (HadError) System.Environment.Exit(65);
+            if (HadRuntimeError) System.Environment.Exit(70);
         }
         private static void RunPrompt()
         {
@@ -54,13 +55,11 @@ namespace CraftingInterpreters.Lox
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
             Parser parser = new Parser(tokens);
-            Expr expression = parser.Parse();
+            List<Stmt> statements = parser.Parse();
 
             // Stop if there was a syntax error.
             if (HadError) return;
-            interpreter.Interpret(expression);
-
-
+            interpreter.Interpret(statements);
         }
 
         public static void Error(int line, string message)
