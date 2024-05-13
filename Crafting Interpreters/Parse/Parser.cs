@@ -56,7 +56,7 @@ namespace Crafting_Interpreters.Parse
 
         private Expr Assignment()
         {
-            Expr expr = Equality();
+            Expr expr = Or();
             if (Match(TokenType.EQUAL))
             {
                 Token equals = Previous();
@@ -74,18 +74,34 @@ namespace Crafting_Interpreters.Parse
             return expr;
         }
 
-        //public List<Stmt> Parse()
-        //{
-        //    List<Stmt> statements = new List<Stmt>();
-        //    while (!IsAtEnd())
-        //    {
-        //        statements.Add(Statement());
-        //        statements.Add(Declaration());
+        private Expr Or()
+        {
+            Expr expr = And();
 
-        //    }
+            while (Match(TokenType.OR))
+            {
+                Token _operator = Previous();
+                Expr right = And();
+                expr = new Expr.Logical(expr, _operator, right);
+            }
 
-        //    return statements;
-        //}
+            return expr;
+        }
+
+        private Expr And()
+        {
+            Expr expr = Equality();
+
+            while (Match(TokenType.AND))
+            {
+                Token _operator = Previous();
+                Expr right = Equality();
+                expr = new Expr.Logical(expr, _operator, right);
+            }
+
+            return expr;
+        }
+
         public List<Stmt> Parse()
         {
             List<Stmt> statements = new List<Stmt>();
@@ -138,15 +154,88 @@ namespace Crafting_Interpreters.Parse
 
         private Stmt Statement()
         {
-
+            if (Match(TokenType.FOR)) return ForStatement();
+            if (Match(TokenType.IF)) return IfStatement();
             if (Match(TokenType.PRINT))
             {
                 return PrintStatement();
             }
+            if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new Block(Block());
 
             return ExpressionStatement();
 
+        }
+
+        private Stmt ForStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+            Stmt initializer;
+            if (Match(TokenType.SEMICOLON))
+            {
+                initializer = null;
+            }
+            else if (Match(TokenType.VAR))
+            {
+                initializer = VarDeclaration();
+            }
+            else
+            {
+                initializer = ExpressionStatement();
+            }
+            Expr condition = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                condition = Expression();
+            }
+            Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+            Expr increment = null;
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                increment = Expression();
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            Stmt body = Statement();
+
+            if (increment != null)
+            {
+                body = new Stmt.Block(new List<Stmt> { body, new Stmt.Expression(increment) });
+            }
+            if (condition == null) condition = new Expr.Literal(true);
+            body = new Stmt.While(condition, body);
+
+            if (initializer != null)
+            {
+                body = new Stmt.Block(new List<Stmt> {initializer, body});
+            }
+
+            return body;
+        }
+
+        private Stmt WhileStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+            Stmt body = Statement();
+
+            return new Stmt.While(condition, body);
+        }
+        private Stmt IfStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+            Stmt thenBranch = Statement();
+            Stmt elseBranch = null;
+            if (Match(TokenType.ELSE))
+            {
+                elseBranch = Statement();
+            }
+
+            return new Stmt.If(condition, thenBranch, elseBranch);
         }
 
         private List<Stmt> Block()

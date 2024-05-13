@@ -213,5 +213,41 @@ namespace Crafting_Interpreters
             }
 
         }
+
+        object? Stmt.Visitor<object>.VisitIfStmt(Stmt.If stmt)
+        {
+            if (IsTruthy(Evaluate(stmt.condition)))
+            {
+                Execute(stmt.thenBranch);
+            }
+            else if (stmt.elseBranch != null)
+            {
+                Execute(stmt.elseBranch);
+            }
+            return null;
+        }
+
+        public object? VisitLogicalExpr(Expr.Logical expr)
+        {
+            object left = Evaluate(expr.left);
+
+            if (expr._operator.Type == TokenType.OR) {
+                if (IsTruthy(left)) return left;
+            } else
+            {
+                if (!IsTruthy(left)) return left;
+            }
+
+            return Evaluate(expr.right);
+        }
+
+        object? Stmt.Visitor<object>.VisitWhileStmt(Stmt.While stmt)
+        {
+            while (IsTruthy(Evaluate(stmt.condition)))
+            {
+                Execute(stmt.body);
+            }
+            return null;
+        }
     }
 }

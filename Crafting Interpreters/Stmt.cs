@@ -7,9 +7,11 @@ namespace CraftingInterpreters.Lox
         public interface Visitor<R>
         {
             R? VisitExpressionStmt(Expression stmt);
+            R? VisitIfStmt(If _if);
             R? VisitPrintStmt(Print stmt);
             R? VisitVarStmt(Var stmt);
             R? VisitBlockStmt(Block block);
+            R? VisitWhileStmt(While stmt);
         }
         public class Block : Stmt
         {
@@ -38,6 +40,24 @@ namespace CraftingInterpreters.Lox
             }
 
             public readonly Expr _expression;
+        }
+        public class If : Stmt
+        {
+            public If(Expr condition, Stmt thenBranch, Stmt elseBranch)
+            {
+                this.condition = condition;
+                this.thenBranch = thenBranch;
+                this.elseBranch = elseBranch;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitIfStmt(this);
+            }
+
+            public readonly Expr condition;
+            public readonly Stmt thenBranch;
+            public readonly Stmt elseBranch;
         }
         public class Print : Stmt
         {
@@ -68,6 +88,22 @@ namespace CraftingInterpreters.Lox
 
             public readonly Token name;
             public readonly Expr initializer;
+        }
+        public class While : Stmt
+        {
+            public While(Expr condition, Stmt body)
+            {
+                this.condition = condition;
+                this.body = body;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitWhileStmt(this);
+            }
+
+            public readonly Expr condition;
+            public readonly Stmt body;
         }
         public abstract R Accept<R>(Visitor<R> visitor);
     }

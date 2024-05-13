@@ -1,7 +1,8 @@
 {
   "profiles": {
     "Crafting Interpreters": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\Max\\Downloads\\test.jlox"
     },
     "WSL": {
       "commandName": "WSL2",
