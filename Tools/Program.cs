@@ -19,6 +19,7 @@ namespace CraftingInterpreters.Tools
             string outputDir = args[0];
             DefineAst(outputDir, "Expr", new List<string>
             {
+                "Assign   : Token name, Expr value",
                 "Binary   : Expr Left, Token Operator, Expr Right",
                 "Grouping : Expr Expression",
                 "Literal  : object Value",

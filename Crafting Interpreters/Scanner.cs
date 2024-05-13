@@ -213,9 +213,10 @@ namespace CraftingInterpreters.Lox
         {
             while (IsAlphaNumeric(Peek())) Advance();
 
-            string text = Source.Substring(start, current);
-            TokenType type = Keywords[text];
-            if (type == null)
+            // Alternative to source.Substring(start, current - start);
+            string text = Source[start..current];
+
+            if (!Keywords.TryGetValue(text, out TokenType type))
             {
                 type = TokenType.IDENTIFIER;
             }

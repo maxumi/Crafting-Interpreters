@@ -14,6 +14,11 @@ namespace Crafting_Interpreters
             return expr.Accept(this);
         }
 
+        public string? VisitAssignExpr(Expr.Assign expr)
+        {
+            throw new NotImplementedException();
+        }
+
         public string? VisitVariableExpr(Expr.Variable expr)
         {
             throw new NotImplementedException();

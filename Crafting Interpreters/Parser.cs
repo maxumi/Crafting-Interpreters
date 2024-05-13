@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using static CraftingInterpreters.Lox.Expr;
 using static CraftingInterpreters.Lox.Stmt;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -50,18 +51,54 @@ namespace Crafting_Interpreters
 
         private Expr Expression()
         {
-            return Equality();
+            return Assignment();
         }
+
+        private Expr Assignment()
+        {
+            Expr expr = Equality();
+            if (Match(TokenType.EQUAL))
+            {
+                Token equals = Previous();
+                Expr value = Assignment();
+
+                if (expr is Expr.Variable) {
+                    Token name = ((Expr.Variable)expr).name;
+                    return new Expr.Assign(name, value);
+                }
+
+                error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
+        }
+
+        //public List<Stmt> Parse()
+        //{
+        //    List<Stmt> statements = new List<Stmt>();
+        //    while (!IsAtEnd())
+        //    {
+        //        statements.Add(Statement());
+        //        statements.Add(Declaration());
+
+        //    }
+
+        //    return statements;
+        //}
         public List<Stmt> Parse()
         {
             List<Stmt> statements = new List<Stmt>();
             while (!IsAtEnd())
             {
-                statements.Add(Statement());
-                statements.Add(Declaration());
-
+                if (Match(TokenType.VAR))
+                {
+                    statements.Add(VarDeclaration());
+                }
+                else
+                {
+                    statements.Add(Statement());
+                }
             }
-
             return statements;
         }
 
@@ -87,6 +124,7 @@ namespace Crafting_Interpreters
         private Stmt VarDeclaration()
         {
             Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+
             Expr initializer = null;
             if (Match(TokenType.EQUAL))
             {
@@ -189,6 +227,7 @@ namespace Crafting_Interpreters
         }
         private Expr Primary()
         {
+
             if (Match(TokenType.FALSE)) return new Expr.Literal(false);
             if (Match(TokenType.TRUE)) return new Expr.Literal(true);
             if (Match(TokenType.NIL)) return new Expr.Literal(null);

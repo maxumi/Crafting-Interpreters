@@ -42,8 +42,8 @@ namespace CraftingInterpreters.Lox
         {
             public Var(Token _name, Expr _initializer)
             {
-                _name = name;
-                _initializer = initializer;
+                name = _name;
+                initializer = _initializer;
             }
 
             public override R Accept<R>(Visitor<R> visitor)

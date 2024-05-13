@@ -179,7 +179,14 @@ namespace Crafting_Interpreters
 
         object? Expr.Visitor<object>.VisitVariableExpr(Expr.Variable expr)
         {
-            return environment.get(expr.name);
+            return environment.Get(expr.name);
+        }
+
+        object? Expr.Visitor<object>.VisitAssignExpr(Expr.Assign expr)
+        {
+            object value = Evaluate(expr.value);
+            environment.Assign(expr.name, value);
+            return value;
         }
     }
 }
