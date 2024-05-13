@@ -10,7 +10,7 @@ using static CraftingInterpreters.Lox.Expr;
 using static CraftingInterpreters.Lox.Stmt;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace Crafting_Interpreters
+namespace Crafting_Interpreters.Parse
 {
     public class Parser
     {
@@ -23,7 +23,7 @@ namespace Crafting_Interpreters
         }
         private bool Match(params TokenType[] types)
         {
-            foreach(TokenType type in types)
+            foreach (TokenType type in types)
             {
                 if (Check(type))
                 {
@@ -62,9 +62,10 @@ namespace Crafting_Interpreters
                 Token equals = Previous();
                 Expr value = Assignment();
 
-                if (expr is Expr.Variable) {
-                    Token name = ((Expr.Variable)expr).name;
-                    return new Expr.Assign(name, value);
+                if (expr is Variable)
+                {
+                    Token name = ((Variable)expr).name;
+                    return new Assign(name, value);
                 }
 
                 error(equals, "Invalid assignment target.");
@@ -132,7 +133,7 @@ namespace Crafting_Interpreters
             }
 
             Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
-            return new Stmt.Var(name, initializer);
+            return new Var(name, initializer);
         }
 
         private Stmt Statement()
@@ -142,15 +143,30 @@ namespace Crafting_Interpreters
             {
                 return PrintStatement();
             }
+            if (Match(TokenType.LEFT_BRACE)) return new Block(Block());
 
             return ExpressionStatement();
 
         }
+
+        private List<Stmt> Block()
+        {
+            List<Stmt> statements = new();
+
+            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+            return statements;
+        }
+
         private Stmt PrintStatement()
         {
             Expr value = Expression();
             Consume(TokenType.SEMICOLON, "Expect ';' after value.");
-            return new Stmt.Print(value);
+            return new Print(value);
 
         }
 
@@ -158,7 +174,7 @@ namespace Crafting_Interpreters
         {
             Expr expr = Expression();
             Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
-            return new Stmt.Expression(expr);
+            return new Expression(expr);
 
         }
 
@@ -170,7 +186,7 @@ namespace Crafting_Interpreters
             {
                 Token _operator = Previous();
                 Expr right = Comparison();
-                expr = new Expr.Binary(expr, _operator, right);
+                expr = new Binary(expr, _operator, right);
             }
 
             return expr;
@@ -183,7 +199,7 @@ namespace Crafting_Interpreters
             {
                 Token _operator = Previous();
                 Expr right = Term();
-                expr = new Expr.Binary(expr, _operator, right);
+                expr = new Binary(expr, _operator, right);
             }
 
             return expr;
@@ -195,7 +211,7 @@ namespace Crafting_Interpreters
             {
                 Token _operator = Previous();
                 Expr right = Factor();
-                expr = new Expr.Binary(expr, _operator, right);
+                expr = new Binary(expr, _operator, right);
             }
 
             return expr;
@@ -208,7 +224,7 @@ namespace Crafting_Interpreters
             {
                 Token _operator = Previous();
                 Expr right = Unary();
-                expr = new Expr.Binary(expr, _operator, right);
+                expr = new Binary(expr, _operator, right);
             }
 
             return expr;
@@ -219,7 +235,7 @@ namespace Crafting_Interpreters
             {
                 Token _operator = Previous();
                 Expr right = Unary();
-                return new Expr.Unary(_operator, right);
+                return new Unary(_operator, right);
             }
 
             return Primary();
@@ -228,25 +244,25 @@ namespace Crafting_Interpreters
         private Expr Primary()
         {
 
-            if (Match(TokenType.FALSE)) return new Expr.Literal(false);
-            if (Match(TokenType.TRUE)) return new Expr.Literal(true);
-            if (Match(TokenType.NIL)) return new Expr.Literal(null);
+            if (Match(TokenType.FALSE)) return new Literal(false);
+            if (Match(TokenType.TRUE)) return new Literal(true);
+            if (Match(TokenType.NIL)) return new Literal(null);
 
             if (Match(TokenType.NUMBER, TokenType.STRING))
             {
-                return new Expr.Literal(Previous().Literal);
+                return new Literal(Previous().Literal);
             }
 
             if (Match(TokenType.IDENTIFIER))
             {
-                return new Expr.Variable(Previous());
+                return new Variable(Previous());
             }
 
             if (Match(TokenType.LEFT_PAREN))
             {
                 Expr expr = Expression();
                 Consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
-                return new Expr.Grouping(expr);
+                return new Grouping(expr);
             }
 
             throw error(Peek(), "Expect expression.");
@@ -270,7 +286,7 @@ namespace Crafting_Interpreters
         }
         private Token Previous()
         {
-            return tokens[current -1];
+            return tokens[current - 1];
         }
         private void Synchronize()
         {

@@ -9,6 +9,21 @@ namespace CraftingInterpreters.Lox
             R? VisitExpressionStmt(Expression stmt);
             R? VisitPrintStmt(Print stmt);
             R? VisitVarStmt(Var stmt);
+            R? VisitBlockStmt(Block block);
+        }
+        public class Block : Stmt
+        {
+            public Block(List<Stmt> statements)
+            {
+                this.statements = statements;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitBlockStmt(this);
+            }
+
+            public readonly List<Stmt> statements;
         }
         public class Expression : Stmt
         {

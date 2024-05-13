@@ -188,5 +188,30 @@ namespace Crafting_Interpreters
             environment.Assign(expr.name, value);
             return value;
         }
+
+        object? Stmt.Visitor<object>.VisitBlockStmt(Stmt.Block stmt)
+        {
+            ExecuteBlock(stmt.statements, new Environment(environment));
+            return null;
+        }
+
+        private void ExecuteBlock(List<Stmt> statements, Environment environment)
+        {
+            Environment previous = this.environment;
+            try
+            {
+                this.environment = environment;
+
+                foreach (Stmt stmt in statements)
+                {
+                    Execute(stmt);
+                }
+            }
+            finally
+            {
+                this.environment = previous;
+            }
+
+        }
     }
 }

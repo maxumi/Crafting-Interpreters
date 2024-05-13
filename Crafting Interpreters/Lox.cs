@@ -1,6 +1,6 @@
 ﻿using Crafting_Interpreters;
 using Crafting_Interpreters.Errors;
-using CraftingInterpreters.Lox;
+using Crafting_Interpreters.Parse;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;

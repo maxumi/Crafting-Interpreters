@@ -28,6 +28,7 @@ namespace CraftingInterpreters.Tools
             });
             DefineAst(outputDir, "Stmt", new List<string>
             {
+              "Block      : List<Stmt> statements",
               "Expression : Expr expression",
               "Print      : Expr expression",
               "Var        : Token name, Expr initializer"

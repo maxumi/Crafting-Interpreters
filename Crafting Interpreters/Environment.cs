@@ -10,14 +10,23 @@ namespace Crafting_Interpreters
 {
     public class Environment
     {
+        readonly Environment Enclosing;
         private readonly Dictionary<string, object> values = new ();
-
+        public Environment()
+        {
+            Enclosing = null;
+        }
+        public Environment(Environment enclosing)
+        {
+            this.Enclosing = enclosing;
+        }
         public object Get(Token name)
         {
             if (values.ContainsKey(name.Lexeme))
             {
                 return values[name.Lexeme];
             }
+            if (Enclosing != null) return Enclosing.Get(name);
 
             throw new RuntimeError(name,"Undefined variable '" + name.Lexeme + "'.");
         }
@@ -35,6 +44,13 @@ namespace Crafting_Interpreters
                 values[name.Lexeme] = value;
                 return;
             }
+
+            if (Enclosing != null)
+            {
+                Enclosing.Assign(name, value);
+                return;
+            }
+
             throw new RuntimeError(name, "Undefined variable '" + name.Lexeme + "'.");
 
         }

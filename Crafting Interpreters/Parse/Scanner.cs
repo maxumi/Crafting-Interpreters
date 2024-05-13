@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace CraftingInterpreters.Lox
+namespace Crafting_Interpreters.Parse
 {
     internal class Scanner
     {
@@ -200,8 +200,8 @@ namespace CraftingInterpreters.Lox
 
         private bool IsAlpha(char c)
         {
-            return (c >= 'a' && c <= 'z') ||
-                   (c >= 'A' && c <= 'Z') ||
+            return c >= 'a' && c <= 'z' ||
+                   c >= 'A' && c <= 'Z' ||
                     c == '_';
 
         }
