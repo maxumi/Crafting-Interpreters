@@ -36,6 +36,25 @@ namespace Crafting_Interpreters
         {
             values.Add(name, value);
         }
+        public object GetAt(int distance,string name)
+        {
+            return Ancestor(distance).values[name];
+
+        }
+        public void AssignAt(int distance, Token name, object value)
+        {
+            Ancestor(distance).values[name.Lexeme] = value;
+        }
+        private Environment Ancestor(int distance)
+        {
+            Environment environment = this;
+            for (int i = 0; i < distance; i++)
+            {
+                environment = environment.Enclosing;
+            }
+
+            return environment;
+        }
 
         internal void Assign(Token name, object value)
         {

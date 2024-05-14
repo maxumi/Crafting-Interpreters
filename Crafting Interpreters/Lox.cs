@@ -57,8 +57,12 @@ namespace CraftingInterpreters.Lox
             Parser parser = new Parser(tokens);
             List<Stmt> statements = parser.Parse();
 
+            Resolver resolver = new Resolver(interpreter);
+            resolver.Resolve(statements);
+
             // Stop if there was a syntax error.
             if (HadError) return;
+
             interpreter.Interpret(statements);
         }
 

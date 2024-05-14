@@ -13,6 +13,8 @@ namespace Crafting_Interpreters
 {
     public class Interpreter : Expr.Visitor<object>, Stmt.Visitor<object>
     {
+        private readonly Dictionary<Expr, int> locals = new Dictionary<Expr, int>();
+
         public readonly Environment globals = new Environment();
         private Environment environment;
         public Interpreter()
@@ -152,6 +154,11 @@ namespace Crafting_Interpreters
         {
             stmt.Accept(this);
         }
+        public void Resolve(Expr expr, int depth)
+        {
+            locals[expr] = depth;
+        }
+
         private bool IsEqual(object a, object b)
         {
             if (a == null && b == null) return true;
@@ -187,13 +194,33 @@ namespace Crafting_Interpreters
 
         object? Expr.Visitor<object>.VisitVariableExpr(Expr.Variable expr)
         {
-            return environment.Get(expr.name);
+            return LookUpVariable(expr.name, expr);
+
+        }
+
+        private object? LookUpVariable(Token name, Expr.Variable expr)
+        {
+            if (locals.TryGetValue(expr, out int distance))
+            {
+                return environment.GetAt(distance, name.Lexeme);
+            }
+            else
+            {
+                return globals.Get(name);
+            }
         }
 
         object? Expr.Visitor<object>.VisitAssignExpr(Expr.Assign expr)
         {
             object value = Evaluate(expr.value);
-            environment.Assign(expr.name, value);
+            if (locals.TryGetValue(expr, out int distance))
+            {
+                environment.AssignAt(distance, expr.name, value);
+            }
+            else
+            {
+                globals.Assign(expr.name, value);
+            }
             return value;
         }
 
