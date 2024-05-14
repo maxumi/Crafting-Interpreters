@@ -101,21 +101,14 @@ namespace Crafting_Interpreters.Parse
 
             return expr;
         }
-
         public List<Stmt> Parse()
         {
             List<Stmt> statements = new List<Stmt>();
             while (!IsAtEnd())
             {
-                if (Match(TokenType.VAR))
-                {
-                    statements.Add(VarDeclaration());
-                }
-                else
-                {
-                    statements.Add(Statement());
-                }
+                statements.Add(Declaration());
             }
+
             return statements;
         }
 
@@ -123,6 +116,7 @@ namespace Crafting_Interpreters.Parse
         {
             try
             {
+                if (Match(TokenType.FUN)) { return Function("function"); }
                 if (Match(TokenType.VAR))
                 {
                     return VarDeclaration();
@@ -136,6 +130,30 @@ namespace Crafting_Interpreters.Parse
                 return null;
             }
 
+        }
+
+        private Stmt Function(string kind)
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect " + kind + " name.");
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after " + kind + " name.");
+            List<Token> parameters = new();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (parameters.Count() >= 255)
+                    {
+                        error(Peek(), "Can't have more than 255 parameters.");
+                    }
+
+                    parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+                } while (Match(TokenType.COMMA));
+            }
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+            Consume(TokenType.LEFT_BRACE, "Expect '{' before " + kind + " body.");
+            List<Stmt> body = Block();
+            return new Stmt.Function(name, parameters, body);
         }
 
         private Stmt VarDeclaration()
@@ -327,9 +345,42 @@ namespace Crafting_Interpreters.Parse
                 return new Unary(_operator, right);
             }
 
-            return Primary();
+            return Call();
 
         }
+
+        private Expr Call()
+        {
+            Expr expr = Primary();
+
+            while (true)
+            {
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    expr = FinishCall(expr);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return expr;
+        }
+
+        private Expr FinishCall(Expr callee)
+        {
+            List<Expr> arguments = new();
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do {
+                    arguments.Add(Expression());
+                } while (Match(TokenType.COMMA));
+            }
+            Token paren = Consume(TokenType.RIGHT_PAREN,"Expect ')' after arguments.");
+            return new Expr.Call(callee, paren, arguments);
+        }
+
         private Expr Primary()
         {
 

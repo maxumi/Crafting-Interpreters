@@ -1,16 +1,23 @@
-﻿using Crafting_Interpreters.Errors;
+﻿using Crafting_Interpreters._interface;
+using Crafting_Interpreters.Errors;
 using CraftingInterpreters.Lox;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Crafting_Interpreters
 {
-    internal class Interpreter : Expr.Visitor<object>, Stmt.Visitor<object>
+    public class Interpreter : Expr.Visitor<object>, Stmt.Visitor<object>
     {
-        private Environment environment = new Environment();
+        public readonly Environment globals = new Environment();
+        private Environment environment;
+        public Interpreter()
+        {
+            environment = globals;
+        }
         public void Interpret(List<Stmt> statements)
         {
             try
@@ -195,7 +202,7 @@ namespace Crafting_Interpreters
             return null;
         }
 
-        private void ExecuteBlock(List<Stmt> statements, Environment environment)
+        public void ExecuteBlock(List<Stmt> statements, Environment environment)
         {
             Environment previous = this.environment;
             try
@@ -247,6 +254,37 @@ namespace Crafting_Interpreters
             {
                 Execute(stmt.body);
             }
+            return null;
+        }
+
+        object? Expr.Visitor<object>.VisitCallExpr(Expr.Call expr)
+        {
+            object callee = Evaluate(expr.callee);
+
+            List<object> arguments = new();
+            foreach (Expr argument in expr.arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+
+            if (!(callee is ICallable)) {
+                throw new RuntimeError(expr.paren,"Can only call functions and classes.");
+            }
+
+            ICallable function = (ICallable)callee;
+            if (arguments.Count() != function.Arity())
+            {
+                throw new RuntimeError(expr.paren, "Expected " +
+                    function.Arity() + " arguments but got " +
+                    arguments.Count() + ".");
+            }
+            return function.Call(this, arguments);
+        }
+
+        object? Stmt.Visitor<object>.VisitFunctionStmt(Stmt.Function stmt)
+        {
+            LoxFunction function = new LoxFunction(stmt);
+            environment.Define(stmt.name.Lexeme, function);
             return null;
         }
     }

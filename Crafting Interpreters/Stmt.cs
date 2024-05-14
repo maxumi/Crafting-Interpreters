@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CraftingInterpreters.Lox
 {
@@ -7,6 +8,7 @@ namespace CraftingInterpreters.Lox
         public interface Visitor<R>
         {
             R? VisitExpressionStmt(Expression stmt);
+            R? VisitFunctionStmt(Function stmt);
             R? VisitIfStmt(If _if);
             R? VisitPrintStmt(Print stmt);
             R? VisitVarStmt(Var stmt);
@@ -40,6 +42,24 @@ namespace CraftingInterpreters.Lox
             }
 
             public readonly Expr _expression;
+        }
+        public class Function : Stmt
+        {
+            public Function(Token name, List<Token> Params, List<Stmt> body)
+            {
+                this.name = name;
+                this.Params = Params;
+                this.body = body;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitFunctionStmt(this);
+            }
+
+            public readonly Token name;
+            public readonly List<Token> Params;
+            public readonly List<Stmt> body;
         }
         public class If : Stmt
         {

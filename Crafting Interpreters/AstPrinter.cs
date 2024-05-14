@@ -19,6 +19,11 @@ namespace Crafting_Interpreters
             throw new NotImplementedException();
         }
 
+        public string? VisitCallExpr(Expr.Call expr)
+        {
+            throw new NotImplementedException();
+        }
+
         public string? VisitLogicalExpr(Expr.Logical expr)
         {
             throw new NotImplementedException();

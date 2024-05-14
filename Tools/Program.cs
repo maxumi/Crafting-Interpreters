@@ -21,6 +21,7 @@ namespace CraftingInterpreters.Tools
             {
                 "Assign   : Token name, Expr value",
                 "Binary   : Expr Left, Token Operator, Expr Right",
+                "Call     : Expr callee, Token paren, List<Expr> arguments",
                 "Grouping : Expr Expression",
                 "Literal  : object Value",
                 "Logical  : Expr left, Token operator, Expr right",
@@ -31,6 +32,7 @@ namespace CraftingInterpreters.Tools
             {
               "Block      : List<Stmt> statements",
               "Expression : Expr expression",
+              "Function   : Token name, List<Token> params, List<Stmt> body",
               "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
               "Print      : Expr expression",
               "Var        : Token name, Expr initializer",
