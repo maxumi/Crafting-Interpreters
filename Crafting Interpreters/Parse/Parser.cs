@@ -174,15 +174,26 @@ namespace Crafting_Interpreters.Parse
         {
             if (Match(TokenType.FOR)) return ForStatement();
             if (Match(TokenType.IF)) return IfStatement();
-            if (Match(TokenType.PRINT))
-            {
-                return PrintStatement();
-            }
+            if (Match(TokenType.PRINT)) return PrintStatement();
+            if (Match(TokenType.RETURN)) return ReturnStatement();
             if (Match(TokenType.WHILE)) return WhileStatement();
             if (Match(TokenType.LEFT_BRACE)) return new Block(Block());
 
             return ExpressionStatement();
 
+        }
+
+        private Stmt ReturnStatement()
+        {
+            Token keyword = Previous();
+            Expr value = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                value = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+            return new Stmt.Return(keyword, value);
         }
 
         private Stmt ForStatement()

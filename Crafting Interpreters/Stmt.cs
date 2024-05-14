@@ -11,6 +11,7 @@ namespace CraftingInterpreters.Lox
             R? VisitFunctionStmt(Function stmt);
             R? VisitIfStmt(If _if);
             R? VisitPrintStmt(Print stmt);
+            R? VisitReturnStmt(Return stmt);
             R? VisitVarStmt(Var stmt);
             R? VisitBlockStmt(Block block);
             R? VisitWhileStmt(While stmt);
@@ -92,6 +93,22 @@ namespace CraftingInterpreters.Lox
             }
 
             public readonly Expr _expression;
+        }
+        public class Return : Stmt
+        {
+            public Return(Token keyword, Expr value)
+            {
+                this.keyword = keyword;
+                this.value = value;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitReturnStmt(this);
+            }
+
+            public readonly Token keyword;
+            public readonly Expr value;
         }
         public class Var : Stmt
         {

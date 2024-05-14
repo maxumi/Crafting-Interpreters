@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static CraftingInterpreters.Lox.Stmt;
 
 namespace Crafting_Interpreters
 {
@@ -283,9 +284,17 @@ namespace Crafting_Interpreters
 
         object? Stmt.Visitor<object>.VisitFunctionStmt(Stmt.Function stmt)
         {
-            LoxFunction function = new LoxFunction(stmt);
+            LoxFunction function = new LoxFunction(stmt, environment);
             environment.Define(stmt.name.Lexeme, function);
             return null;
+        }
+
+        object? Stmt.Visitor<object>.VisitReturnStmt(Stmt.Return stmt)
+        {
+            object value = null;
+            if (stmt.value != null) value = Evaluate(stmt.value);
+
+            throw new Errors.Return(value);
         }
     }
 }
