@@ -1,4 +1,5 @@
 ﻿using Crafting_Interpreters._interface;
+using Crafting_Interpreters.Classes;
 using Crafting_Interpreters.Errors;
 using CraftingInterpreters.Lox;
 using System;
@@ -9,9 +10,9 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using static CraftingInterpreters.Lox.Stmt;
 
-namespace Crafting_Interpreters
+namespace Crafting_Interpreters.Interpreters
 {
-    public class Interpreter : Expr.Visitor<object>, Stmt.Visitor<object>
+    public class Interpreter : Expr.Visitor<object>, Visitor<object>
     {
         private readonly Dictionary<Expr, int> locals = new Dictionary<Expr, int>();
 
@@ -25,7 +26,7 @@ namespace Crafting_Interpreters
         {
             try
             {
-                foreach(Stmt stmt in statements)
+                foreach (Stmt stmt in statements)
                 {
                     Execute(stmt);
                 }
@@ -79,7 +80,7 @@ namespace Crafting_Interpreters
                     // "+" Can mean either the values combined or concatenate the strings
                     if (left is double && right is double) return (double)left + (double)right;
                     if (left is string && right is string) return (string)left + (string)right;
-                    throw new RuntimeError(expr.Operator,"Operands must be two numbers or two strings.");
+                    throw new RuntimeError(expr.Operator, "Operands must be two numbers or two strings.");
                 case TokenType.SLASH:
                     CheckNumberOperands(expr.Operator, left, right);
                     return (double)left / (double)right;
@@ -131,7 +132,7 @@ namespace Crafting_Interpreters
         }
         private void CheckNumberOperands(Token @operator, object left, object right)
         {
-            if (left is Double && right is double) return;
+            if (left is double && right is double) return;
 
             throw new RuntimeError(@operator, "Operands must be numbers.");
 
@@ -167,20 +168,20 @@ namespace Crafting_Interpreters
             return a.Equals(b);
         }
 
-        object? Stmt.Visitor<object>.VisitExpressionStmt(Stmt.Expression stmt)
+        object? Visitor<object>.VisitExpressionStmt(Expression stmt)
         {
             Evaluate(stmt._expression);
             return null;
         }
 
-        object? Stmt.Visitor<object>.VisitPrintStmt(Stmt.Print stmt)
+        object? Visitor<object>.VisitPrintStmt(Print stmt)
         {
             object value = Evaluate(stmt._expression);
             Console.WriteLine(Stringify(value));
             return null;
         }
 
-        object? Stmt.Visitor<object>.VisitVarStmt(Stmt.Var stmt)
+        object? Visitor<object>.VisitVarStmt(Var stmt)
         {
             object value = null;
             if (stmt.initializer != null)
@@ -198,7 +199,7 @@ namespace Crafting_Interpreters
 
         }
 
-        private object? LookUpVariable(Token name, Expr.Variable expr)
+        private object? LookUpVariable(Token name, Expr expr)
         {
             if (locals.TryGetValue(expr, out int distance))
             {
@@ -213,6 +214,7 @@ namespace Crafting_Interpreters
         object? Expr.Visitor<object>.VisitAssignExpr(Expr.Assign expr)
         {
             object value = Evaluate(expr.value);
+
             if (locals.TryGetValue(expr, out int distance))
             {
                 environment.AssignAt(distance, expr.name, value);
@@ -224,7 +226,7 @@ namespace Crafting_Interpreters
             return value;
         }
 
-        object? Stmt.Visitor<object>.VisitBlockStmt(Stmt.Block stmt)
+        object? Visitor<object>.VisitBlockStmt(Block stmt)
         {
             ExecuteBlock(stmt.statements, new Environment(environment));
             return null;
@@ -249,7 +251,7 @@ namespace Crafting_Interpreters
 
         }
 
-        object? Stmt.Visitor<object>.VisitIfStmt(Stmt.If stmt)
+        object? Visitor<object>.VisitIfStmt(If stmt)
         {
             if (IsTruthy(Evaluate(stmt.condition)))
             {
@@ -266,9 +268,11 @@ namespace Crafting_Interpreters
         {
             object left = Evaluate(expr.left);
 
-            if (expr._operator.Type == TokenType.OR) {
+            if (expr._operator.Type == TokenType.OR)
+            {
                 if (IsTruthy(left)) return left;
-            } else
+            }
+            else
             {
                 if (!IsTruthy(left)) return left;
             }
@@ -276,7 +280,7 @@ namespace Crafting_Interpreters
             return Evaluate(expr.right);
         }
 
-        object? Stmt.Visitor<object>.VisitWhileStmt(Stmt.While stmt)
+        object? Visitor<object>.VisitWhileStmt(While stmt)
         {
             while (IsTruthy(Evaluate(stmt.condition)))
             {
@@ -295,8 +299,9 @@ namespace Crafting_Interpreters
                 arguments.Add(Evaluate(argument));
             }
 
-            if (!(callee is ICallable)) {
-                throw new RuntimeError(expr.paren,"Can only call functions and classes.");
+            if (!(callee is ICallable))
+            {
+                throw new RuntimeError(expr.paren, "Can only call functions and classes.");
             }
 
             ICallable function = (ICallable)callee;
@@ -309,19 +314,62 @@ namespace Crafting_Interpreters
             return function.Call(this, arguments);
         }
 
-        object? Stmt.Visitor<object>.VisitFunctionStmt(Stmt.Function stmt)
+        object? Visitor<object>.VisitFunctionStmt(Function stmt)
         {
-            LoxFunction function = new LoxFunction(stmt, environment);
+            LoxFunction function = new LoxFunction(stmt, environment, false);
             environment.Define(stmt.name.Lexeme, function);
             return null;
         }
 
-        object? Stmt.Visitor<object>.VisitReturnStmt(Stmt.Return stmt)
+        object? Visitor<object>.VisitReturnStmt(Stmt.Return stmt)
         {
             object value = null;
             if (stmt.value != null) value = Evaluate(stmt.value);
 
             throw new Errors.Return(value);
+        }
+
+        object? Visitor<object>.VisitClassStmt(Class stmt)
+        {
+            environment.Define(stmt.name.Lexeme, null);
+            Dictionary<string, LoxFunction> methods = new();
+            foreach(Stmt.Function method in stmt.methods)
+            {
+                LoxFunction function = new LoxFunction(method, environment, method.name.Lexeme.Equals("init"));
+                methods[method.name.Lexeme] = function;
+            }
+            LoxClass klass = new LoxClass(stmt.name.Lexeme, methods);
+            environment.Assign(stmt.name, klass);
+            return null;
+        }
+
+        object Expr.Visitor<object>.VisitGetExpr(Expr.Get expr)
+        {
+            object _object = Evaluate(expr.Object);
+            if (_object is LoxInstance) {
+                return ((LoxInstance)_object).Get(expr.name);
+            }
+
+            throw new RuntimeError(expr.name,"Only instances have properties.");
+        }
+
+        object Expr.Visitor<object>.VisitSetExpr(Expr.Set expr)
+        {
+            object _object = Evaluate(expr.Object);
+
+            if (!(_object is LoxInstance)) {
+                throw new RuntimeError(expr.name,
+                                       "Only instances have fields.");
+            }
+
+            object value = Evaluate(expr.value);
+            ((LoxInstance)_object).Set(expr.name, value);
+            return value;
+        }
+
+        object? Expr.Visitor<object>.VisitThisExpr(Expr.This expr)
+        {
+            return LookUpVariable(expr.keyword, expr);
         }
     }
 }

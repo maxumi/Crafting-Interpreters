@@ -65,7 +65,12 @@ namespace Crafting_Interpreters.Parse
                 if (expr is Variable)
                 {
                     Token name = ((Variable)expr).name;
-                    return new Assign(name, value);
+                    return new Expr.Assign(name, value);
+                }
+                else if (expr is Expr.Get)
+                {
+                    Expr.Get get = (Expr.Get)expr;
+                    return new Expr.Set(get.Object, get.name, value);
                 }
 
                 error(equals, "Invalid assignment target.");
@@ -116,6 +121,7 @@ namespace Crafting_Interpreters.Parse
         {
             try
             {
+                if (Match(TokenType.CLASS)) return ClassDeclaration();
                 if (Match(TokenType.FUN)) { return Function("function"); }
                 if (Match(TokenType.VAR))
                 {
@@ -132,7 +138,24 @@ namespace Crafting_Interpreters.Parse
 
         }
 
-        private Stmt Function(string kind)
+        private Stmt ClassDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect class name.");
+            Consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+
+            List<Stmt.Function> methods = new();
+            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                methods.Add(Function("method"));
+            }
+
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+            return new Stmt.Class(name, methods);
+
+        }
+
+        private Stmt.Function Function(string kind)
         {
             Token name = Consume(TokenType.IDENTIFIER, "Expect " + kind + " name.");
             Consume(TokenType.LEFT_PAREN, "Expect '(' after " + kind + " name.");
@@ -370,6 +393,12 @@ namespace Crafting_Interpreters.Parse
                 {
                     expr = FinishCall(expr);
                 }
+                else if (Match(TokenType.DOT))
+                {
+                    Token name = Consume(TokenType.IDENTIFIER,
+                        "Expect property name after '.'.");
+                    expr = new Expr.Get(expr, name);
+                }
                 else
                 {
                     break;
@@ -403,6 +432,7 @@ namespace Crafting_Interpreters.Parse
             {
                 return new Literal(Previous().Literal);
             }
+            if (Match(TokenType.THIS)) return new Expr.This(Previous());
 
             if (Match(TokenType.IDENTIFIER))
             {

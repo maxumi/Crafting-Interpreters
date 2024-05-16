@@ -55,6 +55,11 @@ namespace Crafting_Interpreters
 
         }
 
+        string Expr.Visitor<string>.VisitGetExpr(Expr.Get expr)
+        {
+            throw new NotImplementedException();
+        }
+
         string Expr.Visitor<string>.VisitGroupingExpr(Expr.Grouping expr)
         {
             return Parenthesize("group", expr.Expression);
@@ -66,6 +71,16 @@ namespace Crafting_Interpreters
             if (expr.Value == null) return "nil";
             return expr.Value.ToString();
 
+        }
+
+        string Expr.Visitor<string>.VisitSetExpr(Expr.Set expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        string? Expr.Visitor<string>.VisitThisExpr(Expr.This expr)
+        {
+            throw new NotImplementedException();
         }
 
         string Expr.Visitor<string>.VisitUnaryExpr(Expr.Unary expr)

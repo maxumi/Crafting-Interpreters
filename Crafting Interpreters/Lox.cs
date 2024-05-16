@@ -1,5 +1,5 @@
-﻿using Crafting_Interpreters;
-using Crafting_Interpreters.Errors;
+﻿using Crafting_Interpreters.Errors;
+using Crafting_Interpreters.Interpreters;
 using Crafting_Interpreters.Parse;
 using System.IO;
 using System.Runtime.InteropServices;

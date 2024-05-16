@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using static CraftingInterpreters.Lox.Expr;
 
 namespace CraftingInterpreters.Lox
 {
@@ -9,10 +10,13 @@ namespace CraftingInterpreters.Lox
             R? VisitAssignExpr(Assign expr);
             R? VisitBinaryExpr(Binary expr);
             R? VisitCallExpr(Call expr);
+            R VisitGetExpr(Get expr);
             R? VisitGroupingExpr(Grouping expr);
             R? VisitLiteralExpr(Literal expr);
             R? VisitLogicalExpr(Logical expr);
+            R VisitSetExpr(Set expr);
             R? VisitUnaryExpr(Unary expr);
+            R? VisitThisExpr(This expr);
             R? VisitVariableExpr(Variable expr);
         }
         public class Assign : Expr
@@ -67,6 +71,22 @@ namespace CraftingInterpreters.Lox
             public readonly Token paren;
             public readonly List<Expr> arguments;
         }
+        public class Get : Expr
+        {
+            public Get(Expr Object, Token name)
+            {
+                this.Object = Object;
+                this.name = name;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitGetExpr(this);
+            }
+
+            public readonly Expr Object;
+        public readonly Token name;
+        }
         public class Grouping : Expr
         {
             public Grouping(Expr expression)
@@ -112,6 +132,38 @@ namespace CraftingInterpreters.Lox
             public readonly Expr left;
             public readonly Token _operator;
             public readonly Expr right;
+        }
+        public class Set : Expr
+        {
+            public Set(Expr _object, Token name, Expr value)
+            {
+                this.Object = _object;
+                this.name = name;
+                this.value = value;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitSetExpr(this);
+            }
+
+            public readonly Expr Object;
+            public readonly Token name;
+            public readonly Expr value;
+        }
+        public class This : Expr
+        {
+            public This(Token keyword)
+            {
+                this.keyword = keyword;
+            }
+
+            public override R Accept<R>(Visitor<R> visitor)
+            {
+                return visitor.VisitThisExpr(this);
+            }
+
+            public readonly Token keyword;
         }
         public class Unary : Expr
         {

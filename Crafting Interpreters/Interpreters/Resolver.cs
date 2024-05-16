@@ -7,16 +7,25 @@ using System.Threading.Tasks;
 using static CraftingInterpreters.Lox.Expr;
 using static System.Formats.Asn1.AsnWriter;
 
-namespace Crafting_Interpreters
+namespace Crafting_Interpreters.Interpreters
 {
 
-    public class Resolver : Expr.Visitor<object>, Stmt.Visitor<object>
+    public class Resolver : Visitor<object>, Stmt.Visitor<object>
     {
         private enum FunctionType
         {
             NONE,
-            FUNCTION
+            FUNCTION,
+            INITIALIZER,
+            METHOD
         }
+        private enum ClassType
+        {
+            NONE,
+            CLASS
+        }
+
+        private ClassType currentClass = ClassType.NONE;
         private readonly Interpreter interpreter;
         private readonly Stack<Dictionary<string, bool>> _scopes = new Stack<Dictionary<string, bool>>();
         private FunctionType currentFunction = FunctionType.NONE;
@@ -25,14 +34,14 @@ namespace Crafting_Interpreters
             this.interpreter = interpreter;
         }
 
-        object? Expr.Visitor<object>.VisitAssignExpr(Expr.Assign expr)
+        object? Visitor<object>.VisitAssignExpr(Assign expr)
         {
             Resolve(expr.value);
             ResolveLocal(expr, expr.name);
             return null;
         }
 
-        object? Expr.Visitor<object>.VisitBinaryExpr(Expr.Binary expr)
+        object? Visitor<object>.VisitBinaryExpr(Binary expr)
         {
             Resolve(expr.Left);
             Resolve(expr.Right);
@@ -73,11 +82,11 @@ namespace Crafting_Interpreters
             _scopes.Push(new Dictionary<string, bool>());
         }
 
-        object? Expr.Visitor<object>.VisitCallExpr(Expr.Call expr)
+        object? Visitor<object>.VisitCallExpr(Call expr)
         {
             Resolve(expr.callee);
 
-            foreach(Expr argument in expr.arguments)
+            foreach (Expr argument in expr.arguments)
             {
                 Resolve(argument);
             }
@@ -105,7 +114,7 @@ namespace Crafting_Interpreters
             FunctionType enclosingFunction = currentFunction;
             currentFunction = type;
             BeginScope();
-            foreach(Token param in function.Params)
+            foreach (Token param in function.Params)
             {
                 Declare(param);
                 Define(param);
@@ -116,7 +125,7 @@ namespace Crafting_Interpreters
 
         }
 
-        object? Expr.Visitor<object>.VisitGroupingExpr(Expr.Grouping expr)
+        object? Visitor<object>.VisitGroupingExpr(Grouping expr)
         {
             Resolve(expr.Expression);
             return null;
@@ -131,12 +140,12 @@ namespace Crafting_Interpreters
             return null;
         }
 
-        object? Expr.Visitor<object>.VisitLiteralExpr(Expr.Literal expr)
+        object? Visitor<object>.VisitLiteralExpr(Literal expr)
         {
             return null;
         }
 
-        object? Expr.Visitor<object>.VisitLogicalExpr(Expr.Logical expr)
+        object? Visitor<object>.VisitLogicalExpr(Logical expr)
         {
             Resolve(expr.left);
             Resolve(expr.right);
@@ -159,20 +168,24 @@ namespace Crafting_Interpreters
 
             if (stmt.value != null)
             {
+                if (currentFunction == FunctionType.INITIALIZER)
+                {
+                    Lox.Error(stmt.keyword,"Can't return a value from an initializer.");
+                }
                 Resolve(stmt.value);
             }
             return null;
 
         }
 
-        object? Expr.Visitor<object>.VisitUnaryExpr(Expr.Unary expr)
+        object? Visitor<object>.VisitUnaryExpr(Unary expr)
         {
             Resolve(expr.Right);
             return null;
 
         }
 
-        object? Expr.Visitor<object>.VisitVariableExpr(Expr.Variable expr)
+        object? Visitor<object>.VisitVariableExpr(Variable expr)
         {
             if (_scopes.Count != 0 && _scopes.Peek().TryGetValue(expr.name.Lexeme, out bool value) && value == false)
             {
@@ -182,14 +195,13 @@ namespace Crafting_Interpreters
             ResolveLocal(expr, expr.name);
             return null;
         }
-
         private void ResolveLocal(Expr expr, Token name)
         {
             for (int i = _scopes.Count - 1; i >= 0; i--)
             {
-                if (_scopes.ToArray()[i].ContainsKey(name.Lexeme))
+                if (_scopes.ElementAt(i).ContainsKey(name.Lexeme))
                 {
-                    interpreter.Resolve(expr, _scopes.Count - 1 - i);
+                    interpreter.Resolve(expr, i);
                     return;
                 }
             }
@@ -230,6 +242,57 @@ namespace Crafting_Interpreters
         {
             Resolve(stmt.condition);
             Resolve(stmt.body);
+            return null;
+        }
+
+        object? Stmt.Visitor<object>.VisitClassStmt(Stmt.Class stmt)
+        {
+            ClassType enclosingClass = currentClass;
+            currentClass = ClassType.CLASS;
+
+            Declare(stmt.name);
+            Define(stmt.name);
+
+            BeginScope();
+            _scopes.Peek().Add("this", true);
+
+            foreach (Stmt.Function method in stmt.methods)
+            {
+                FunctionType declaration = FunctionType.METHOD;
+                if (method.name.Lexeme.Equals("init"))
+                {
+                    declaration = FunctionType.INITIALIZER;
+                }
+
+                ResolveFunction(method, declaration);
+            }
+            EndScope();
+            currentClass = enclosingClass;
+            return null;
+        }
+
+        object Visitor<object>.VisitGetExpr(Get expr)
+        {
+            Resolve(expr.Object);
+            return null;
+        }
+
+        object Visitor<object>.VisitSetExpr(Set expr)
+        {
+            Resolve(expr.value);
+            Resolve(expr.Object);
+            return null;
+        }
+
+        object? Visitor<object>.VisitThisExpr(This expr)
+        {
+            if (currentClass == ClassType.NONE)
+            {
+                Lox.Error(expr.keyword,"Can't use 'this' outside of a class.");
+                return null;
+            }
+
+            ResolveLocal(expr, expr.keyword);
             return null;
         }
     }
