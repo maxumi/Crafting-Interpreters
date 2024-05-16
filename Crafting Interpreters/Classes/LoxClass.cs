@@ -11,11 +11,14 @@ namespace Crafting_Interpreters.Classes
     public class LoxClass : ICallable
     {
         public readonly string name;
+        readonly LoxClass superclass;
+
         private readonly Dictionary<string, LoxFunction> methods;
 
 
-        public LoxClass(string name, Dictionary<string, LoxFunction> methods)
+        public LoxClass(string name, LoxClass superclass, Dictionary<string, LoxFunction> methods)
         {
+            this.superclass = superclass;
             this.name = name;
             this.methods = methods;
         }
@@ -31,8 +34,6 @@ namespace Crafting_Interpreters.Classes
 
         public object Call(Interpreter interpreter, List<object> arguments)
         {
-
-
             LoxInstance instance = new LoxInstance(this);
             LoxFunction initializer = FindMethod("init");
             if (initializer != null)
@@ -53,6 +54,11 @@ namespace Crafting_Interpreters.Classes
             if (methods.ContainsKey(_name))
             {
                 return methods[_name];
+            }
+
+            if (superclass != null)
+            {
+                return superclass.FindMethod(_name);
             }
 
             return null;

@@ -22,7 +22,8 @@ namespace Crafting_Interpreters.Interpreters
         private enum ClassType
         {
             NONE,
-            CLASS
+            CLASS,
+            SUBCLASS
         }
 
         private ClassType currentClass = ClassType.NONE;
@@ -253,6 +254,23 @@ namespace Crafting_Interpreters.Interpreters
             Declare(stmt.name);
             Define(stmt.name);
 
+            if (stmt.superclass != null && stmt.name.Lexeme.Equals(stmt.superclass.name.Lexeme))
+            {
+                Lox.Error(stmt.superclass.name, "A class can't inherit from itself.");
+            }
+
+            if (stmt.superclass != null)
+            {
+                currentClass = ClassType.SUBCLASS;
+                Resolve(stmt.superclass);
+            }
+
+            if (stmt.superclass != null)
+            {
+                BeginScope();
+                _scopes.Peek().Add("super", true);
+            }
+
             BeginScope();
             _scopes.Peek().Add("this", true);
 
@@ -267,6 +285,9 @@ namespace Crafting_Interpreters.Interpreters
                 ResolveFunction(method, declaration);
             }
             EndScope();
+
+            if (stmt.superclass != null) EndScope();
+
             currentClass = enclosingClass;
             return null;
         }
@@ -292,6 +313,20 @@ namespace Crafting_Interpreters.Interpreters
                 return null;
             }
 
+            ResolveLocal(expr, expr.keyword);
+            return null;
+        }
+
+        object? Visitor<object>.VisitSuperExpr(Super expr)
+        {
+            if (currentClass == ClassType.NONE)
+            {
+                Lox.Error(expr.keyword,"Can't use 'super' outside of a class.");
+            }
+            else if (currentClass != ClassType.SUBCLASS)
+            {
+                Lox.Error(expr.keyword, "Can't use 'super' in a class with no superclass.");
+            }
             ResolveLocal(expr, expr.keyword);
             return null;
         }

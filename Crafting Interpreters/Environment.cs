@@ -10,7 +10,7 @@ namespace Crafting_Interpreters
 {
     public class Environment
     {
-        readonly Environment Enclosing;
+        public readonly Environment Enclosing;
         private readonly Dictionary<string, object> values = new ();
         public Environment()
         {

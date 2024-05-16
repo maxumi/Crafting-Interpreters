@@ -78,6 +78,11 @@ namespace Crafting_Interpreters
             throw new NotImplementedException();
         }
 
+        string? Expr.Visitor<string>.VisitSuperExpr(Expr.Super expr)
+        {
+            throw new NotImplementedException();
+        }
+
         string? Expr.Visitor<string>.VisitThisExpr(Expr.This expr)
         {
             throw new NotImplementedException();

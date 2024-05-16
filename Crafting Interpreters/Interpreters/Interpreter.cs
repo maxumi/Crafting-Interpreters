@@ -331,14 +331,38 @@ namespace Crafting_Interpreters.Interpreters
 
         object? Visitor<object>.VisitClassStmt(Class stmt)
         {
+            object superclass = null;
+            if (stmt.superclass != null)
+            {
+                superclass = Evaluate(stmt.superclass);
+                if (!(superclass is LoxClass)) 
+                {
+                    throw new RuntimeError(stmt.superclass.name,"Superclass must be a class.");
+                }
+            }
+
             environment.Define(stmt.name.Lexeme, null);
+            if (stmt.superclass != null)
+            {
+                environment = new Environment(environment);
+                environment.Define("super", superclass);
+            }
+
+
             Dictionary<string, LoxFunction> methods = new();
             foreach(Stmt.Function method in stmt.methods)
             {
                 LoxFunction function = new LoxFunction(method, environment, method.name.Lexeme.Equals("init"));
                 methods[method.name.Lexeme] = function;
             }
-            LoxClass klass = new LoxClass(stmt.name.Lexeme, methods);
+            LoxClass klass = new LoxClass(stmt.name.Lexeme,(LoxClass)superclass, methods);
+
+            if (superclass != null)
+            {
+                environment = environment.Enclosing;
+            }
+
+
             environment.Assign(stmt.name, klass);
             return null;
         }
@@ -370,6 +394,23 @@ namespace Crafting_Interpreters.Interpreters
         object? Expr.Visitor<object>.VisitThisExpr(Expr.This expr)
         {
             return LookUpVariable(expr.keyword, expr);
+        }
+
+        object? Expr.Visitor<object>.VisitSuperExpr(Expr.Super expr)
+        {
+            int distance = locals[expr];
+            LoxClass superclass = (LoxClass)environment.GetAt(distance, "super");
+
+            LoxInstance _object = (LoxInstance)environment.GetAt(distance - 1, "this");
+
+            LoxFunction method = superclass.FindMethod(expr.method.Lexeme);
+
+            if (method == null)
+            {
+                throw new RuntimeError(expr.method,"Undefined property '" + expr.method.Lexeme + "'.");
+            }
+
+            return method.Bind(_object);
         }
     }
 }
