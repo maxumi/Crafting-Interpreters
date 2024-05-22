@@ -1,15 +1,20 @@
-﻿using CraftingInterpreters.Lox;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Crafting_Interpreters.AST;
 
-namespace Crafting_Interpreters
+
+
+
+// Pay no mind to this class, this was used to test the AST early.
+
+namespace Crafting_Interpreters.Misc
 {
     public class AstPrinter : Expr.Visitor<string>
     {
-        public string Print (Expr expr)
+        public string Print(Expr expr)
         {
             return expr.Accept(this);
         }

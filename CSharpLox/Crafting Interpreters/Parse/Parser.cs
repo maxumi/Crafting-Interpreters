@@ -6,21 +6,44 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using static CraftingInterpreters.Lox.Expr;
-using static CraftingInterpreters.Lox.Stmt;
+using static Crafting_Interpreters.AST.Expr;
+using static Crafting_Interpreters.AST.Stmt;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using Crafting_Interpreters.AST;
 
 namespace Crafting_Interpreters.Parse
 {
+    /// <summary>
+    /// The Parser class that goes through Tokens to retrive statements.
+    /// </summary>
     public class Parser
     {
-        private List<Token> tokens;
+
+        /// <summary>
+        /// Holds the tokens to be parsed.
+        /// </summary>
+        private readonly List<Token> tokens;
+
+
+        /// <summary>
+        /// Holds the current token position in the list.
+        /// </summary>
         private int current = 0;
 
+        // Constructor initializing the parser with a list of tokens
+        /// <summary>
+        /// Constructor initializing the parser with a list of tokens
+        /// </summary>
         public Parser(List<Token> tokens)
         {
             this.tokens = tokens;
         }
+
+        /// <summary>
+        /// Attempts to match any of the given token types. If a match is found, the current token is advanced.
+        /// </summary>
+        /// <param name="types">Token types to match against.</param>
+        /// <returns>True if a match is found, otherwise false.</returns>
         private bool Match(params TokenType[] types)
         {
             foreach (TokenType type in types)
@@ -33,27 +56,50 @@ namespace Crafting_Interpreters.Parse
             }
             return false;
         }
+
+        /// <summary>
+        /// Checks if the current token matches the given type.
+        /// </summary>
+        /// <param name="type">The token type to check.</param>
+        /// <returns>True if the current token matches, otherwise false.</returns>
         private bool Check(TokenType type)
         {
             if (IsAtEnd()) return false;
             return Peek().Type == type;
         }
 
+        /// <summary>
+        /// Advances to the next token and returns the previous token.
+        /// </summary>
+        /// <returns>The previous token.</returns>
         private Token Advance()
         {
             if (!IsAtEnd()) current++;
             return Previous();
         }
+
+        /// <summary>
+        /// Checks if the parser has reached the end of the token list.
+        /// </summary>
+        /// <returns>True if at the end, otherwise false.</returns>
         private bool IsAtEnd()
         {
             return Peek().Type == TokenType.EOF;
         }
 
+        /// <summary>
+        /// Parses an expression.
+        /// </summary>
+        /// <returns>The parsed expression.</returns>
         private Expr Expression()
         {
             return Assignment();
         }
 
+        /// <summary>
+        /// Parses an assignment expression.
+        /// </summary>
+        /// <returns>The parsed assignment expression.</returns>
         private Expr Assignment()
         {
             Expr expr = Or();
@@ -79,6 +125,10 @@ namespace Crafting_Interpreters.Parse
             return expr;
         }
 
+        /// <summary>
+        /// Parses an 'or' expression.
+        /// </summary>
+        /// <returns>The parsed 'or' expression.</returns>
         private Expr Or()
         {
             Expr expr = And();
@@ -93,6 +143,10 @@ namespace Crafting_Interpreters.Parse
             return expr;
         }
 
+        /// <summary>
+        /// Parses an 'and' expression.
+        /// </summary>
+        /// <returns>The parsed 'and' expression.</returns>
         private Expr And()
         {
             Expr expr = Equality();
@@ -106,6 +160,11 @@ namespace Crafting_Interpreters.Parse
 
             return expr;
         }
+
+        /// <summary>
+        /// Parses the list of statements.
+        /// </summary>
+        /// <returns>A list of parsed statements.</returns>
         public List<Stmt> Parse()
         {
             List<Stmt> statements = new List<Stmt>();
@@ -117,6 +176,10 @@ namespace Crafting_Interpreters.Parse
             return statements;
         }
 
+        /// <summary>
+        /// Parses a declaration statement.
+        /// </summary>
+        /// <returns>The parsed declaration statement.</returns>
         private Stmt Declaration()
         {
             try
@@ -135,9 +198,12 @@ namespace Crafting_Interpreters.Parse
                 Synchronize();
                 return null;
             }
-
         }
 
+        /// <summary>
+        /// Parses a class declaration.
+        /// </summary>
+        /// <returns>The parsed class declaration.</returns>
         private Stmt ClassDeclaration()
         {
             Token name = Consume(TokenType.IDENTIFIER, "Expect class name.");
@@ -159,9 +225,13 @@ namespace Crafting_Interpreters.Parse
             Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
 
             return new Stmt.Class(name, superclass, methods);
-
         }
 
+        /// <summary>
+        /// Parses a function.
+        /// </summary>
+        /// <param name="kind">The kind of function (e.g., "function" or "method").</param>
+        /// <returns>The parsed function.</returns>
         private Stmt.Function Function(string kind)
         {
             Token name = Consume(TokenType.IDENTIFIER, "Expect " + kind + " name.");
@@ -186,6 +256,10 @@ namespace Crafting_Interpreters.Parse
             return new Stmt.Function(name, parameters, body);
         }
 
+        /// <summary>
+        /// Parses a variable declaration.
+        /// </summary>
+        /// <returns>The parsed variable declaration.</returns>
         private Stmt VarDeclaration()
         {
             Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
@@ -200,6 +274,10 @@ namespace Crafting_Interpreters.Parse
             return new Var(name, initializer);
         }
 
+        /// <summary>
+        /// Parses a statement.
+        /// </summary>
+        /// <returns>The parsed statement.</returns>
         private Stmt Statement()
         {
             if (Match(TokenType.FOR)) return ForStatement();
@@ -210,9 +288,12 @@ namespace Crafting_Interpreters.Parse
             if (Match(TokenType.LEFT_BRACE)) return new Block(Block());
 
             return ExpressionStatement();
-
         }
 
+        /// <summary>
+        /// Parses a return statement.
+        /// </summary>
+        /// <returns>The parsed return statement.</returns>
         private Stmt ReturnStatement()
         {
             Token keyword = Previous();
@@ -226,6 +307,10 @@ namespace Crafting_Interpreters.Parse
             return new Stmt.Return(keyword, value);
         }
 
+        /// <summary>
+        /// Parses a for statement.
+        /// </summary>
+        /// <returns>The parsed for statement.</returns>
         private Stmt ForStatement()
         {
             Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
@@ -266,12 +351,16 @@ namespace Crafting_Interpreters.Parse
 
             if (initializer != null)
             {
-                body = new Stmt.Block(new List<Stmt> {initializer, body});
+                body = new Stmt.Block(new List<Stmt> { initializer, body });
             }
 
             return body;
         }
 
+        /// <summary>
+        /// Parses a while statement.
+        /// </summary>
+        /// <returns>The parsed while statement.</returns>
         private Stmt WhileStatement()
         {
             Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
@@ -281,6 +370,11 @@ namespace Crafting_Interpreters.Parse
 
             return new Stmt.While(condition, body);
         }
+
+        /// <summary>
+        /// Parses an if statement.
+        /// </summary>
+        /// <returns>The parsed if statement.</returns>
         private Stmt IfStatement()
         {
             Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
@@ -297,6 +391,10 @@ namespace Crafting_Interpreters.Parse
             return new Stmt.If(condition, thenBranch, elseBranch);
         }
 
+        /// <summary>
+        /// Parses a block of statements.
+        /// </summary>
+        /// <returns>A list of statements in the block.</returns>
         private List<Stmt> Block()
         {
             List<Stmt> statements = new();
@@ -310,22 +408,32 @@ namespace Crafting_Interpreters.Parse
             return statements;
         }
 
+        /// <summary>
+        /// Parses a print statement.
+        /// </summary>
+        /// <returns>The parsed print statement.</returns>
         private Stmt PrintStatement()
         {
             Expr value = Expression();
             Consume(TokenType.SEMICOLON, "Expect ';' after value.");
             return new Print(value);
-
         }
 
+        /// <summary>
+        /// Parses an expression statement.
+        /// </summary>
+        /// <returns>The parsed expression statement.</returns>
         private Stmt ExpressionStatement()
         {
             Expr expr = Expression();
             Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
             return new Expression(expr);
-
         }
 
+        /// <summary>
+        /// Parses an equality expression.
+        /// </summary>
+        /// <returns>The parsed equality expression.</returns>
         private Expr Equality()
         {
             Expr expr = Comparison();
@@ -339,6 +447,11 @@ namespace Crafting_Interpreters.Parse
 
             return expr;
         }
+
+        /// <summary>
+        /// Parses a comparison expression.
+        /// </summary>
+        /// <returns>The parsed comparison expression.</returns>
         private Expr Comparison()
         {
             Expr expr = Term();
@@ -352,6 +465,11 @@ namespace Crafting_Interpreters.Parse
 
             return expr;
         }
+
+        /// <summary>
+        /// Parses a term expression.
+        /// </summary>
+        /// <returns>The parsed term expression.</returns>
         private Expr Term()
         {
             Expr expr = Factor();
@@ -364,6 +482,12 @@ namespace Crafting_Interpreters.Parse
 
             return expr;
         }
+
+        /// <summary>
+        /// Parses a factor expression.
+
+        /// </summary>
+        /// <returns>The parsed factor expression.</returns>
         private Expr Factor()
         {
             Expr expr = Unary();
@@ -377,6 +501,11 @@ namespace Crafting_Interpreters.Parse
 
             return expr;
         }
+
+        /// <summary>
+        /// Parses a unary expression.
+        /// </summary>
+        /// <returns>The parsed unary expression.</returns>
         private Expr Unary()
         {
             if (Match(TokenType.BANG, TokenType.MINUS))
@@ -387,9 +516,12 @@ namespace Crafting_Interpreters.Parse
             }
 
             return Call();
-
         }
 
+        /// <summary>
+        /// Parses a call expression.
+        /// </summary>
+        /// <returns>The parsed call expression.</returns>
         private Expr Call()
         {
             Expr expr = Primary();
@@ -402,8 +534,7 @@ namespace Crafting_Interpreters.Parse
                 }
                 else if (Match(TokenType.DOT))
                 {
-                    Token name = Consume(TokenType.IDENTIFIER,
-                        "Expect property name after '.'.");
+                    Token name = Consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
                     expr = new Expr.Get(expr, name);
                 }
                 else
@@ -415,22 +546,31 @@ namespace Crafting_Interpreters.Parse
             return expr;
         }
 
+        /// <summary>
+        /// Finishes parsing a call expression.
+        /// </summary>
+        /// <param name="callee">The callee expression.</param>
+        /// <returns>The parsed call expression.</returns>
         private Expr FinishCall(Expr callee)
         {
             List<Expr> arguments = new();
             if (!Check(TokenType.RIGHT_PAREN))
             {
-                do {
+                do
+                {
                     arguments.Add(Expression());
                 } while (Match(TokenType.COMMA));
             }
-            Token paren = Consume(TokenType.RIGHT_PAREN,"Expect ')' after arguments.");
+            Token paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
             return new Expr.Call(callee, paren, arguments);
         }
 
+        /// <summary>
+        /// Parses a primary expression.
+        /// </summary>
+        /// <returns>The parsed primary expression.</returns>
         private Expr Primary()
         {
-
             if (Match(TokenType.FALSE)) return new Literal(false);
             if (Match(TokenType.TRUE)) return new Literal(true);
             if (Match(TokenType.NIL)) return new Literal(null);
@@ -464,12 +604,25 @@ namespace Crafting_Interpreters.Parse
 
             throw error(Peek(), "Expect expression.");
         }
+
+        /// <summary>
+        /// Reports a parse error for the given token.
+        /// </summary>
+        /// <param name="token">The token where the error occurred.</param>
+        /// <param name="message">The error message.</param>
+        /// <returns>A new ParseError exception.</returns>
         private ParseError error(Token token, string message)
         {
             Lox.Error(token, message);
             return new ParseError();
         }
 
+        /// <summary>
+        /// Consumes the current token if it matches the expected type.
+        /// </summary>
+        /// <param name="type">The expected token type.</param>
+        /// <param name="message">The error message if the token does not match.</param>
+        /// <returns>The consumed token.</returns>
         private Token Consume(TokenType type, string message)
         {
             if (Check(type)) return Advance();
@@ -477,14 +630,27 @@ namespace Crafting_Interpreters.Parse
             throw error(Peek(), message);
         }
 
+        /// <summary>
+        /// Returns the current token without advancing.
+        /// </summary>
+        /// <returns>The current token.</returns>
         private Token Peek()
         {
             return tokens[current];
         }
+
+        /// <summary>
+        /// Returns the previous token.
+        /// </summary>
+        /// <returns>The previous token.</returns>
         private Token Previous()
         {
             return tokens[current - 1];
         }
+
+        /// <summary>
+        /// Synchronizes the parser by discarding tokens until it reaches a known point where parsing can continue.
+        /// </summary>
         private void Synchronize()
         {
             Advance();
@@ -493,7 +659,7 @@ namespace Crafting_Interpreters.Parse
             {
                 if (Previous().Type == TokenType.SEMICOLON) return;
 
-                switch (Previous().Type)
+                switch (Peek().Type)
                 {
                     case TokenType.CLASS:
                     case TokenType.FUN:
@@ -509,6 +675,5 @@ namespace Crafting_Interpreters.Parse
                 Advance();
             }
         }
-
     }
 }
