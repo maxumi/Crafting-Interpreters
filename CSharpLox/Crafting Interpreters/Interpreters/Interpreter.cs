@@ -578,6 +578,7 @@ namespace Crafting_Interpreters.Interpreters
             int distance = locals[expr];
             LoxClass superclass = (LoxClass)environment.GetAt(distance, "super");
 
+            // "this" is always one level nearer than "super"'s environment.
             LoxInstance _object = (LoxInstance)environment.GetAt(distance - 1, "this");
 
             LoxFunction method = superclass.FindMethod(expr.method.Lexeme);

@@ -10,6 +10,9 @@ using static System.Formats.Asn1.AsnWriter;
 
 namespace Crafting_Interpreters.Interpreters
 {
+    /// <summary>
+    ///  <see cref="Resolver"/> is a class that checks if any violations against the scoping rules are found before running the code.
+    /// </summary>
     public class Resolver : Visitor<object>, Stmt.Visitor<object>
     {
         /// <summary>
@@ -343,9 +346,12 @@ namespace Crafting_Interpreters.Interpreters
 
         object? Stmt.Visitor<object>.VisitClassStmt(Stmt.Class stmt)
         {
+            // Save the current class type to restore later
             ClassType enclosingClass = currentClass;
+            // Set the current class type to CLASS
             currentClass = ClassType.CLASS;
 
+            // Declare and define the class name in the current scope
             Declare(stmt.name);
             Define(stmt.name);
 
@@ -360,6 +366,7 @@ namespace Crafting_Interpreters.Interpreters
                 Resolve(stmt.superclass);
             }
 
+            // If the class has a superclass, create a new scope for "super"
             if (stmt.superclass != null)
             {
                 BeginScope();
