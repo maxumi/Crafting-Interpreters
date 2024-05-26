@@ -1,0 +1,22 @@
+# Ignore the contents of the build directory but not the directory itself
+/build/*
+!/build/.gitkeep
+
+# Ignore Visual Studio Code specific settings
+.vscode/
+
+# Ignore common build and intermediate files
+*.o
+*.obj
+*.exe
+*.out
+*.log
+
+# Ignore CMake cache files and directories
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Ignore OS-generated files
+.DS_Store
+Thumbs.db
